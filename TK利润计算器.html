@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Shop 利润计算器 (v2.2 - 高级优化版)</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8f9fa; color: #333; line-height: 1.6; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 20px auto; background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        h1, h2 { text-align: center; color: #1a1a1a; }
+        .calculator-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .input-section, .result-section { padding: 20px; border-radius: 6px; }
+        .result-section { background-color: #f4f4f9; border: 1px solid #e0e0e0; }
+        fieldset { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; transition: all 0.3s ease; }
+        legend { font-weight: bold; color: #007bff; padding: 0 10px; }
+        .form-group { margin-bottom: 18px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
+        .form-group .unit { display: inline-block; margin-left: 8px; color: #777; }
+        .campaign-toggle { display: flex; align-items: center; padding: 10px; }
+        .campaign-toggle label { margin-bottom: 0; margin-left: 10px; }
+        #campaignRules.disabled { background-color: #f8f9fa; opacity: 0.6; }
+        #campaignRules.disabled legend { color: #6c757d; }
+        #campaignRules.disabled input { background-color: #e9ecef; cursor: not-allowed; }
+        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease; margin-top: 20px; }
+        button:hover { background-color: #0056b3; }
+        .results-list { padding-left: 0; margin-bottom: 25px; }
+        .results-list li { list-style: none; display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0; align-items: center; }
+        .results-list li:last-child { border-bottom: none; }
+        .results-list .label { font-weight: 500; }
+        .results-list .value { font-weight: bold; text-align: right; }
+        .profit-value { font-size: 1.5rem; }
+        .profit-value.positive { color: #28a745; }
+        .profit-value.negative { color: #dc3545; }
+        .customer-price { color: #007bff; font-size: 1.2rem; }
+        .breakeven-box { background-color: #e2f0ff; border: 1px solid #007bff; border-radius: 6px; padding: 15px; text-align: center; margin-top: 10px; }
+        .breakeven-box .label { font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 5px; }
+        .breakeven-box .value { font-size: 1.8rem; font-weight: bold; color: #0056b3; }
+        @media (max-width: 768px) { .calculator-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>TikTok Shop 利润计算器 (v2.2 - 高级优化版)</h1>
+
+        <div class="calculator-grid">
+            <div class="input-section">
+                <h2>输入数据</h2>
+                <fieldset>
+                    <legend>成本 (人民币)</legend>
+                    <div class="form-group"><label for="productCost">产品采购成本</label><input type="number" id="productCost" value="42" step="0.01"></div>
+                    <div class="form-group"><label for="damageRate">产品货损率</label><input type="number" id="damageRate" value="2.38" step="0.01"><span class="unit">%</span></div>
+                    <div class="form-group"><label for="shippingCost">头程运费</label><input type="number" id="shippingCost" value="13.04" step="0.01"></div>
+                    <div class="form-group"><label for="warehouseCost">海外仓操作费</label><input type="number" id="warehouseCost" value="6" step="0.01"></div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>汇率与售价</legend>
+                    <div class="form-group"><label for="exchangeRate">人民币兑墨西哥比索汇率</label><input type="number" id="exchangeRate" value="2.62" step="0.01"></div>
+                    <div class="form-group"><label for="sellingPrice">您的售价 (墨西哥比索)</label><input type="number" id="sellingPrice" value="339.99" step="0.01"></div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>佣金与活动</legend>
+                    <div class="form-group"><label for="platformCommission">平台佣金率</label><input type="number" id="platformCommission" value="12" step="0.1"><span class="unit">%</span></div>
+                    <div class="form-group"><label for="affiliateCommission">达人佣金率 (基于售价-平台佣金)</label><input type="number" id="affiliateCommission" value="10" step="0.1"><span class="unit">%</span></div>
+                    <div class="campaign-toggle"><input type="checkbox" id="isCampaignActive" style="transform: scale(1.5);"><label for="isCampaignActive"><strong>参加平台合作活动?</strong></label></div>
+                    <fieldset id="campaignRules">
+                        <legend>平台活动规则</legend>
+                        <div class="form-group"><label for="campaignDiscountRate">活动折扣率</label><input type="number" id="campaignDiscountRate" value="10" step="0.1"><span class="unit">%</span></div>
+                        <div class="form-group"><label for="minOrderValue">可使用优惠的最低价格 (比索)</label><input type="number" id="minOrderValue" value="149" step="0.01"></div>
+                        <div class="form-group"><label for="maxDiscountCap">优惠金额上限 (比索)</label><input type="number" id="maxDiscountCap" value="40" step="0.01"></div>
+                        <div class="form-group"><label for="sellerFundingRatio">卖家承担比例</label><input type="number" id="sellerFundingRatio" value="50" step="0.1"><span class="unit">%</span></div>
+                    </fieldset>
+                </fieldset>
+                <button onclick="updateCalculations()">计算</button>
+            </div>
+
+            <div class="result-section">
+                <h2>计算结果</h2>
+                <fieldset>
+                    <legend>成本与利润分析 (基于您的售价)</legend>
+                    <ul class="results-list">
+                        <li><span class="label">计入货损后产品成本</span> <span class="value" id="effectiveCost">-</span></li>
+                        <li><span class="label">固定成本合计</span> <span class="value" id="fixedCosts">-</span></li>
+                        <li><span class="label">平台佣金</span> <span class="value" id="platformCosts">-</span></li>
+                        <li><span class="label">达人佣金</span> <span class="value" id="affiliateCosts">-</span></li>
+                        <li><span class="label">卖家活动成本</span> <span class="value" id="campaignCosts">-</span></li>
+                        <li style="background-color: #e0e0e0; margin: 0 -20px; padding: 10px 20px;"><span class="label"><strong>总成本</strong></span> <span class="value" id="totalCosts">-</span></li>
+                        <li><span class="label"><strong>每单利润 (比索)</strong></span> <span class="value profit-value" id="profit-mxn">-</span></li>
+                        <li><span class="label"><strong>每单利润 (人民币)</strong></span> <span class="value profit-value" id="profit-cny">-</span></li>
+                        <li><span class="label">利润率</span> <span class="value" id="profitMargin">-</span></li>
+                    </ul>
+                </fieldset>
+                 <fieldset>
+                    <legend>定价建议</legend>
+                    <ul class="results-list">
+                         <li><span class="label">客户享受折扣</span> <span class="value" id="customerDiscount">-</span></li>
+                         <li><span class="label"><strong>客户实付价格</strong></span> <span class="value customer-price" id="customerFinalPrice">-</span></li>
+                    </ul>
+                    <div class="breakeven-box">
+                        <span class="label">保本售价 (利润为0)</span>
+                        <span class="value" id="breakevenPrice">- MXN</span>
+                    </div>
+                </fieldset>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateCalculations() {
+            // --- 1. 获取所有输入值 ---
+            const baseProductCost = parseFloat(document.getElementById('productCost').value) || 0;
+            const damageRate = parseFloat(document.getElementById('damageRate').value) / 100 || 0;
+            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
+            const warehouseCost = parseFloat(document.getElementById('warehouseCost').value) || 0;
+            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+            const sellingPrice = parseFloat(document.getElementById('sellingPrice').value) || 0;
+            const platformRate = parseFloat(document.getElementById('platformCommission').value) / 100 || 0;
+            const affiliateRate = parseFloat(document.getElementById('affiliateCommission').value) / 100 || 0;
+            
+            const isCampaignActive = document.getElementById('isCampaignActive').checked;
+            const campaignDiscountRate = parseFloat(document.getElementById('campaignDiscountRate').value) / 100 || 0;
+            const minOrderValue = parseFloat(document.getElementById('minOrderValue').value) || 0;
+            const maxDiscountCap = parseFloat(document.getElementById('maxDiscountCap').value) || Infinity;
+            const sellerFundingRatio = parseFloat(document.getElementById('sellerFundingRatio').value) / 100 || 0;
+
+            // --- 2. 核心计算逻辑 ---
+            // 计入货损，计算实际产品成本
+            const effectiveProductCostCNY = (1 - damageRate > 0) ? baseProductCost / (1 - damageRate) : baseProductCost;
+            const fixedCostsCNY = effectiveProductCostCNY + shippingCost + warehouseCost;
+            const fixedCostsMXN = fixedCostsCNY * exchangeRate;
+
+            // 基于售价计算利润
+            const platformCostsMXN = sellingPrice * platformRate;
+            const affiliateBase = sellingPrice - platformCostsMXN;
+            const affiliateCostsMXN = affiliateBase * affiliateRate;
+
+            let campaignCostsMXN = 0;
+            let customerDiscount = 0;
+            if (isCampaignActive && sellingPrice >= minOrderValue) {
+                const potentialDiscount = sellingPrice * campaignDiscountRate;
+                customerDiscount = Math.min(potentialDiscount, maxDiscountCap);
+                campaignCostsMXN = customerDiscount * sellerFundingRatio;
+            }
+
+            const totalCostsMXN = fixedCostsMXN + platformCostsMXN + affiliateCostsMXN + campaignCostsMXN;
+            const profitMXN = sellingPrice - totalCostsMXN;
+            const profitCNY = profitMXN / exchangeRate;
+            const profitMargin = (sellingPrice > 0) ? (profitMXN / sellingPrice) * 100 : 0;
+            const customerFinalPrice = sellingPrice - customerDiscount;
+
+            // 计算保本售价
+            let breakevenPrice = 0;
+            const variableRateWithoutCampaign = platformRate + (1 - platformRate) * affiliateRate;
+            if (variableRateWithoutCampaign < 1) {
+                const breakevenPriceNoCampaign = fixedCostsMXN / (1 - variableRateWithoutCampaign);
+                
+                if (isCampaignActive) {
+                    const variableRateWithCampaignUncapped = variableRateWithoutCampaign + (campaignDiscountRate * sellerFundingRatio);
+                    if (variableRateWithCampaignUncapped < 1) {
+                        let bepUncapped = fixedCostsMXN / (1 - variableRateWithCampaignUncapped);
+                        
+                        if (bepUncapped < minOrderValue) {
+                             breakevenPrice = breakevenPriceNoCampaign;
+                        } else {
+                            const discountAtBep = bepUncapped * campaignDiscountRate;
+                            if (discountAtBep > maxDiscountCap) {
+                                // Cap is triggered, recalculate
+                                const fixedCampaignCost = maxDiscountCap * sellerFundingRatio;
+                                breakevenPrice = (fixedCostsMXN + fixedCampaignCost) / (1 - variableRateWithoutCampaign);
+                            } else {
+                                breakevenPrice = bepUncapped;
+                            }
+                        }
+                    } else {
+                         breakevenPrice = Infinity; // Costs exceed 100%
+                    }
+                } else {
+                    breakevenPrice = breakevenPriceNoCampaign;
+                }
+            } else {
+                breakevenPrice = Infinity; // Costs exceed 100%
+            }
+
+
+            // --- 3. 显示结果 ---
+            document.getElementById('effectiveCost').textContent = `${effectiveProductCostCNY.toFixed(2)} CNY`;
+            document.getElementById('fixedCosts').textContent = `${fixedCostsMXN.toFixed(2)} MXN`;
+            document.getElementById('platformCosts').textContent = `${platformCostsMXN.toFixed(2)} MXN`;
+            document.getElementById('affiliateCosts').textContent = `${affiliateCostsMXN.toFixed(2)} MXN`;
+            document.getElementById('campaignCosts').textContent = `${campaignCostsMXN.toFixed(2)} MXN`;
+            document.getElementById('totalCosts').textContent = `${totalCostsMXN.toFixed(2)} MXN`;
+            
+            const profitMxnEl = document.getElementById('profit-mxn');
+            profitMxnEl.textContent = `${profitMXN.toFixed(2)} MXN`;
+            profitMxnEl.className = profitMXN >= 0 ? 'value profit-value positive' : 'value profit-value negative';
+
+            const profitCnyEl = document.getElementById('profit-cny');
+            profitCnyEl.textContent = `≈ ${profitCNY.toFixed(2)} CNY`;
+            profitCnyEl.className = profitCNY >= 0 ? 'value profit-value positive' : 'value profit-value negative';
+
+            document.getElementById('profitMargin').textContent = `${profitMargin.toFixed(2)} %`;
+            document.getElementById('customerDiscount').textContent = `${customerDiscount.toFixed(2)} MXN`;
+            document.getElementById('customerFinalPrice').textContent = `${customerFinalPrice.toFixed(2)} MXN`;
+            document.getElementById('breakevenPrice').textContent = (breakevenPrice === Infinity) ? "无法保本" : `${breakevenPrice.toFixed(2)} MXN`;
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const campaignToggle = document.getElementById('isCampaignActive');
+            
+            function toggleCampaignFields() {
+                const isChecked = campaignToggle.checked;
+                const campaignFieldset = document.getElementById('campaignRules');
+                const campaignInputs = campaignFieldset.getElementsByTagName('input');
+
+                campaignFieldset.classList.toggle('disabled', !isChecked);
+                for (let input of campaignInputs) {
+                    input.disabled = !isChecked;
+                }
+            }
+
+            campaignToggle.addEventListener('change', toggleCampaignFields);
+            
+            // Set initial state on page load
+            toggleCampaignFields();
+            updateCalculations();
+
+            // Attach event listener to the button
+            document.querySelector('button').addEventListener('click', updateCalculations);
+        });
+    </script>
+
+</body>
+</html>
