@@ -1,238 +1,730 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TikTok Shop 利润计算器 (v2.2 - 高级优化版)</title>
-    <link rel="icon" type="image/png" href="favicon.png">
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8f9fa; color: #333; line-height: 1.6; margin: 0; padding: 20px; }
-        .container { max-width: 900px; margin: 20px auto; background-color: #fff; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-        h1, h2 { text-align: center; color: #1a1a1a; }
-        .calculator-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
-        .input-section, .result-section { padding: 20px; border-radius: 6px; }
-        .result-section { background-color: #f4f4f9; border: 1px solid #e0e0e0; }
-        fieldset { border: 1px solid #ddd; border-radius: 5px; padding: 15px; margin-bottom: 20px; transition: all 0.3s ease; }
-        legend { font-weight: bold; color: #007bff; padding: 0 10px; }
-        .form-group { margin-bottom: 18px; }
-        .form-group label { display: block; margin-bottom: 6px; font-weight: 600; color: #555; }
-        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem; }
-        .form-group .unit { display: inline-block; margin-left: 8px; color: #777; }
-        .campaign-toggle { display: flex; align-items: center; padding: 10px; }
-        .campaign-toggle label { margin-bottom: 0; margin-left: 10px; }
-        #campaignRules.disabled { background-color: #f8f9fa; opacity: 0.6; }
-        #campaignRules.disabled legend { color: #6c757d; }
-        #campaignRules.disabled input { background-color: #e9ecef; cursor: not-allowed; }
-        button { width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 1.1rem; font-weight: bold; cursor: pointer; transition: background-color 0.3s ease; margin-top: 20px; }
-        button:hover { background-color: #0056b3; }
-        .results-list { padding-left: 0; margin-bottom: 25px; }
-        .results-list li { list-style: none; display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e0e0e0; align-items: center; }
-        .results-list li:last-child { border-bottom: none; }
-        .results-list .label { font-weight: 500; }
-        .results-list .value { font-weight: bold; text-align: right; }
-        .profit-value { font-size: 1.5rem; }
-        .profit-value.positive { color: #28a745; }
-        .profit-value.negative { color: #dc3545; }
-        .customer-price { color: #007bff; font-size: 1.2rem; }
-        .breakeven-box { background-color: #e2f0ff; border: 1px solid #007bff; border-radius: 6px; padding: 15px; text-align: center; margin-top: 10px; }
-        .breakeven-box .label { font-weight: bold; font-size: 1.1rem; display: block; margin-bottom: 5px; }
-        .breakeven-box .value { font-size: 1.8rem; font-weight: bold; color: #0056b3; }
-        @media (max-width: 768px) { .calculator-grid { grid-template-columns: 1fr; } }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TikTok Shop 利润分析仪表盘 (v12.0 - 登录+云端同步+饼图开关)</title>
+  <link rel="icon" type="image/png" href="favicon.png" />
+  <style>
+    :root{ --primary-color:#4A90E2; --primary-light:#eaf2fc; --text-color:#333; --label-color:#555;
+      --border-color:#e9ecef; --background-color:#f8f9fa; --card-background:#fff;
+      --header-background:#f8f9fa; --profit-positive:#28a745; --profit-negative:#dc3545; --delete-color:#e74c3c; }
+
+    /* 防自动下滑 */
+    html,body,.container,#module-simulator,#module-report,.result-section,#report-content{overflow-anchor:none;}
+
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;background:var(--background-color);color:var(--text-color);line-height:1.5;margin:0;padding:15px;}
+    .container{max-width:1600px;width:100%;margin:10px auto;background:var(--card-background);padding:20px;border-radius:12px;box-shadow:0 6px 25px rgba(0,0,0,.07);}
+    h1{text-align:center;color:var(--text-color);margin-block:0 20px;font-weight:600;font-size:1.8rem;}
+
+    .main-nav{display:flex;align-items:center;gap:10px;margin-bottom:20px;background:var(--header-background);padding:5px 10px;border-radius:8px;}
+    .main-nav button{background:none;border:1px solid transparent;padding:10px 20px;cursor:pointer;font-size:1rem;font-weight:500;color:var(--label-color);border-radius:6px;transition:all .2s;}
+    .main-nav button.active{color:#fff;background:var(--primary-color);font-weight:600;box-shadow:0 2px 5px rgba(74,144,226,.3);}
+    .flex-spacer{flex:1 1 auto;}
+    .auth-box{display:flex;align-items:center;gap:8px;color:#666;font-size:.95rem;}
+    .auth-box button{padding:6px 10px;border-radius:6px;border:1px solid var(--border-color);background:#fff;cursor:pointer;}
+    .auth-box .primary{background:var(--primary-color);color:#fff;border-color:transparent;}
+
+    .module-content{display:none;}
+    .module-content.active{display:block;}
+
+    .main-grid{display:grid;grid-template-columns:380px 1fr;gap:25px;}
+    .input-section fieldset{border:1px solid var(--border-color);border-radius:8px;padding:15px;margin-bottom:20px;}
+    .input-section legend{font-weight:600;color:var(--primary-color);padding:0 8px;font-size:1rem;}
+    .form-group{margin-bottom:12px;}
+    .form-group label{display:block;margin-bottom:5px;font-weight:500;color:var(--label-color);font-size:.85em;}
+    .form-group input,.form-group select{width:100%;padding:8px;border:1px solid #ccc;border-radius:5px;box-sizing:border-box;font-size:.9rem;}
+    .preset-actions{display:flex;gap:10px;}
+    .preset-actions input{flex-grow:1;}
+    .preset-actions button{padding:8px 12px;font-size:.9rem;border-radius:5px;border:none;cursor:pointer;color:#fff;}
+    .save-btn{background:var(--primary-color);}
+    .delete-btn{background:var(--delete-color);}
+
+    .tab-nav{display:flex;border-bottom:2px solid var(--border-color);}
+    .tab-nav button{background:none;border:none;padding:10px 15px;cursor:pointer;font-size:.95rem;border-bottom:3px solid transparent;}
+    .tab-nav button.active{color:var(--primary-color);font-weight:600;border-bottom-color:var(--primary-color);}
+    .tab-content{display:none;padding-top:10px;}
+    .tab-content.active{display:block;}
+
+    .results-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:15px;border:1px solid var(--border-color);border-radius:8px;overflow:hidden;}
+    .results-table th,.results-table td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--border-color);font-size:.9rem;vertical-align:middle;}
+    .results-table th{background:var(--header-background);font-weight:600;color:var(--label-color);font-size:.85rem;}
+    .results-table td:first-child,.results-table th:first-child{text-align:left;font-weight:500;}
+    .results-table input{max-width:80px;text-align:right;padding:4px;font-size:.9rem;border-radius:4px;border:1px solid #ccc;}
+    .profit-value.positive{color:var(--profit-positive);}
+    .profit-value.negative{color:var(--profit-negative);}
+    .total-profit-row td{font-weight:bold;font-size:1.1rem;background:#d4edda;color:var(--profit-positive);border-top:2px solid var(--profit-positive);}
+    .total-profit-row small{font-size:.9rem;color:#155724;font-weight:normal;}
+
+    .sub-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:15px;margin-top:15px;}
+    .info-box{background:var(--card-background);border:1px solid var(--border-color);border-radius:8px;padding:15px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+    .info-box .label{font-weight:600;font-size:.9rem;color:var(--label-color);display:block;margin-bottom:6px;}
+    .info-box .value{font-size:1.4rem;font-weight:700;color:var(--primary-color);}
+
+    #report-content{padding:20px;background:#fff;}
+    .chart-container{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px;min-height:350px;}
+    .chart-wrapper{position:relative;width:100%;height:420px;min-height:420px;overflow:hidden;}
+    .chart-wrapper canvas{display:block;width:100% !important;height:100% !important;}
+
+    .batch-processing{padding:20px;border:2px dashed var(--border-color);border-radius:8px;text-align:center;max-width:600px;margin:20px auto;}
+    .batch-processing button{display:inline-block;width:auto;margin:5px;}
+
+    .report-controls{display:flex;flex-wrap:wrap;align-items:center;gap:14px;background:var(--header-background);border:1px solid var(--border-color);border-radius:8px;padding:10px 12px;}
+
+    #store-table td,#store-table th{text-align:left;}
+    #store-table td.num,#store-table th.num{text-align:right;}
+
+    /* 简易弹窗 */
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:none;align-items:center;justify-content:center;z-index:9999;}
+    .modal .box{width:min(420px,92vw);background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:18px;}
+    .modal .box h3{margin:0 0 8px;}
+    .modal .row{margin:8px 0;}
+    .modal .row input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;}
+    .modal .actions{display:flex;gap:10px;margin-top:12px;justify-content:flex-end;}
+    .hidden{display:none;}
+    @media (max-width:1200px){ .main-grid{grid-template-columns:1fr;} .chart-container{grid-template-columns:1fr;} }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>TikTok Shop 利润分析仪表盘 (v12.0)</h1>
 
-    <div class="container">
-        <h1>TikTok Shop 利润计算器 (v2.2 - 高级优化版)</h1>
+    <nav class="main-nav">
+      <button class="active" onclick="openModule(event,'module-simulator')">单品利润模拟器</button>
+      <button onclick="openModule(event,'module-batch')">批量利润分析 (CSV)</button>
+      <button onclick="openModule(event,'module-report')">可视化报告</button>
+      <span class="flex-spacer"></span>
 
-        <div class="calculator-grid">
-            <div class="input-section">
-                <h2>输入数据</h2>
-                <fieldset>
-                    <legend>成本 (人民币)</legend>
-                    <div class="form-group"><label for="productCost">产品采购成本</label><input type="number" id="productCost" value="42" step="0.01"></div>
-                    <div class="form-group"><label for="damageRate">产品货损率</label><input type="number" id="damageRate" value="2.38" step="0.01"><span class="unit">%</span></div>
-                    <div class="form-group"><label for="shippingCost">头程运费</label><input type="number" id="shippingCost" value="13.04" step="0.01"></div>
-                    <div class="form-group"><label for="warehouseCost">海外仓操作费</label><input type="number" id="warehouseCost" value="6" step="0.01"></div>
-                </fieldset>
+      <!-- 登录区域 -->
+      <div class="auth-box">
+        <span id="auth-status">未登录</span>
+        <button id="btn-login" class="primary">登录/注册</button>
+        <button id="btn-logout" class="hidden">退出</button>
+        <label style="display:flex;align-items:center;gap:6px;">
+          <input type="checkbox" id="sync-cloud" checked />
+          <span>自动云同步</span>
+        </label>
+      </div>
+    </nav>
 
-                <fieldset>
-                    <legend>汇率与售价</legend>
-                    <div class="form-group"><label for="exchangeRate">人民币兑墨西哥比索汇率</label><input type="number" id="exchangeRate" value="2.62" step="0.01"></div>
-                    <div class="form-group"><label for="sellingPrice">您的售价 (墨西哥比索)</label><input type="number" id="sellingPrice" value="339.99" step="0.01"></div>
-                </fieldset>
+    <!-- ============ 单品模块（原内容保持不变） ============ -->
+    <!-- （为节省篇幅：下方模块内容和之前 v11.1 的模拟器/批量/表格基本一致，只有报告控件和登录相关脚本是新增/修改） -->
 
-                <fieldset>
-                    <legend>佣金与活动</legend>
-                    <div class="form-group"><label for="platformCommission">平台佣金率</label><input type="number" id="platformCommission" value="12" step="0.1"><span class="unit">%</span></div>
-                    <div class="form-group"><label for="affiliateCommission">达人佣金率 (基于售价-平台佣金)</label><input type="number" id="affiliateCommission" value="10" step="0.1"><span class="unit">%</span></div>
-                    <div class="campaign-toggle"><input type="checkbox" id="isCampaignActive" style="transform: scale(1.5);"><label for="isCampaignActive"><strong>参加平台合作活动?</strong></label></div>
-                    <fieldset id="campaignRules">
-                        <legend>平台活动规则</legend>
-                        <div class="form-group"><label for="campaignDiscountRate">活动折扣率</label><input type="number" id="campaignDiscountRate" value="10" step="0.1"><span class="unit">%</span></div>
-                        <div class="form-group"><label for="minOrderValue">可使用优惠的最低价格 (比索)</label><input type="number" id="minOrderValue" value="149" step="0.01"></div>
-                        <div class="form-group"><label for="maxDiscountCap">优惠金额上限 (比索)</label><input type="number" id="maxDiscountCap" value="40" step="0.01"></div>
-                        <div class="form-group"><label for="sellerFundingRatio">卖家承担比例</label><input type="number" id="sellerFundingRatio" value="50" step="0.1"><span class="unit">%</span></div>
-                    </fieldset>
-                </fieldset>
-                <button onclick="updateCalculations()">计算</button>
+    <div id="module-simulator" class="module-content active">
+      <!-- …… 保持你当前 v11.1 的单品表格与店铺清单（完全一致） …… -->
+      <!-- 由于内容较长，这里省略；你可以直接用你当前的 v11.1 结构替换本注释处。 -->
+      <!-- ！！！为了让代码可运行，我在下方直接插入上一版的完整模拟器区域（与 v11.1 相同） -->
+      <!-- >>>>>>> 开始：v11.1 的模拟器区域（原样拷贝） >>>>>>> -->
+      <div class="main-grid">
+        <div class="input-section">
+          <fieldset>
+            <legend>产品预设管理</legend>
+            <div class="form-group"><label for="preset-select">加载产品预设</label><select id="preset-select"><option value="">-- 选择 --</option></select></div>
+            <div class="form-group">
+              <label for="preset-name">预设/产品名称</label>
+              <div class="preset-actions">
+                <input type="text" id="preset-name" placeholder="产品A-标准定价"/>
+                <button class="save-btn" id="save-preset-btn">保存</button>
+                <button class="delete-btn" id="delete-preset-btn">删除</button>
+              </div>
             </div>
+          </fieldset>
 
-            <div class="result-section">
-                <h2>计算结果</h2>
-                <fieldset>
-                    <legend>成本与利润分析 (基于您的售价)</legend>
-                    <ul class="results-list">
-                        <li><span class="label">计入货损后产品成本</span> <span class="value" id="effectiveCost">-</span></li>
-                        <li><span class="label">固定成本合计</span> <span class="value" id="fixedCosts">-</span></li>
-                        <li><span class="label">平台佣金</span> <span class="value" id="platformCosts">-</span></li>
-                        <li><span class="label">达人佣金</span> <span class="value" id="affiliateCosts">-</span></li>
-                        <li><span class="label">卖家活动成本</span> <span class="value" id="campaignCosts">-</span></li>
-                        <li style="background-color: #e0e0e0; margin: 0 -20px; padding: 10px 20px;"><span class="label"><strong>总成本</strong></span> <span class="value" id="totalCosts">-</span></li>
-                        <li><span class="label"><strong>每单利润 (比索)</strong></span> <span class="value profit-value" id="profit-mxn">-</span></li>
-                        <li><span class="label"><strong>每单利润 (人民币)</strong></span> <span class="value profit-value" id="profit-cny">-</span></li>
-                        <li><span class="label">利润率</span> <span class="value" id="profitMargin">-</span></li>
-                    </ul>
-                </fieldset>
-                 <fieldset>
-                    <legend>定价建议</legend>
-                    <ul class="results-list">
-                         <li><span class="label">客户享受折扣</span> <span class="value" id="customerDiscount">-</span></li>
-                         <li><span class="label"><strong>客户实付价格</strong></span> <span class="value customer-price" id="customerFinalPrice">-</span></li>
-                    </ul>
-                    <div class="breakeven-box">
-                        <span class="label">保本售价 (利润为0)</span>
-                        <span class="value" id="breakevenPrice">- MXN</span>
-                    </div>
-                </fieldset>
+          <div class="tab-nav">
+            <button class="active" onclick="openTab(event,'tab-base')">基础参数</button>
+            <button onclick="openTab(event,'tab-marketing')">营销参数</button>
+            <button onclick="openTab(event,'tab-channel')">渠道/活动</button>
+          </div>
+
+          <div id="tab-base" class="tab-content active">
+            <fieldset>
+              <legend>基础成本 (人民币)</legend>
+              <div class="form-group"><label for="productCost">单件采购成本</label><input type="number" id="productCost" value="42" class="preset-input"/></div>
+              <div class="form-group"><label for="damageRate">综合货损率</label><input type="number" id="damageRate" value="2.38" class="preset-input"/><span class="unit">%</span></div>
+              <div class="form-group"><label for="shippingCost">单件头程均摊</label><input type="number" id="shippingCost" value="13.04" class="preset-input"/></div>
+              <div class="form-group"><label for="warehouseCost">单件仓储操作费</label><input type="number" id="warehouseCost" value="6" class="preset-input"/></div>
+            </fieldset>
+            <fieldset>
+              <legend>售价与汇率</legend>
+              <div class="form-group"><label for="cnyToMxnRate">人民币→墨西哥比索</label><input type="number" id="cnyToMxnRate" value="2.62" class="preset-input"/></div>
+              <div class="form-group"><label for="usdToMxnRate">美元→墨西哥比索</label><input type="number" id="usdToMxnRate" value="18.50" class="preset-input"/></div>
+              <div class="form-group"><label for="sellingPrice">商品零售价 (MXN)</label><input type="number" id="sellingPrice" value="339.99" class="preset-input"/></div>
+            </fieldset>
+          </div>
+
+          <div id="tab-marketing" class="tab-content">
+            <fieldset>
+              <legend>营销成本 (美元)</legend>
+              <div class="form-group"><label for="adSpendTotalUSD">广告活动总花费</label><input type="number" id="adSpendTotalUSD" class="preset-input"/><span class="unit">USD</span></div>
+              <div class="form-group"><label for="adOrders">广告出单总数</label><input type="number" id="adOrders" step="1" class="preset-input"/></div>
+            </fieldset>
+          </div>
+
+          <div id="tab-channel" class="tab-content">
+            <fieldset>
+              <legend>渠道成本与活动</legend>
+              <div class="form-group"><label for="platformCommission">平台服务费率</label><input type="number" id="platformCommission" value="12" class="preset-input"/><span class="unit">%</span></div>
+              <div class="form-group"><label for="affiliateCommission">通用达人佣金率</label><input type="number" id="affiliateCommission" value="10" class="preset-input"/><span class="unit">%</span></div>
+              <div class="form-group"><label for="adAffiliateCommission">广告专项佣金率</label><input type="number" id="adAffiliateCommission" value="10" class="preset-input"/><span class="unit">%</span></div>
+              <div class="campaign-toggle"><input type="checkbox" id="isCampaignActive" class="preset-input"/><label for="isCampaignActive"><strong>参加平台合作活动?</strong></label></div>
+              <fieldset id="campaignRules">
+                <legend>平台活动规则</legend>
+                <div class="form-group"><label for="campaignDiscountRate">活动折扣率</label><input type="number" id="campaignDiscountRate" value="10" class="preset-input"/><span class="unit">%</span></div>
+                <div class="form-group"><label for="minOrderValue">优惠使用门槛 (MXN)</label><input type="number" id="minOrderValue" value="149" class="preset-input"/></div>
+                <div class="form-group"><label for="maxDiscountCap">优惠金额上限 (MXN)</label><input type="number" id="maxDiscountCap" value="40" class="preset-input"/></div>
+                <div class="form-group"><label for="sellerFundingRatio">卖家承担比例</label><input type="number" id="sellerFundingRatio" value="50" class="preset-input"/><span class="unit">%</span></div>
+              </fieldset>
+            </fieldset>
+
+            <fieldset>
+              <legend>智能定价工具</legend>
+              <div class="form-group"><label for="targetProfitCNY">期望单件净利润 (CNY)</label><input type="number" id="targetProfitCNY" placeholder="例如: 50"/></div>
+              <button id="goal-seek-btn" class="save-btn" style="width:100%;">计算建议售价</button>
+              <div id="goal-seek-result" style="text-align:center;margin-top:10px;font-weight:bold;"></div>
+            </fieldset>
+          </div>
+
+          <!-- 店铺产品清单 -->
+          <fieldset>
+            <legend>店铺产品清单</legend>
+            <div class="preset-actions" style="margin-bottom:10px;">
+              <button class="save-btn" id="add-to-store-btn" style="flex:1;">添加当前产品到店铺</button>
+              <button class="delete-btn" id="clear-store-btn" style="flex:1;">清空店铺</button>
             </div>
+            <table class="results-table" id="store-table">
+              <thead><tr><th>产品</th><th class="num">零售价(MXN)</th><th class="num">月销量合计</th><th class="num">月利润(MXN)</th><th>操作</th></tr></thead>
+              <tbody id="store-table-body"><tr><td colspan="5" style="text-align:center;color:#999;">暂无产品</td></tr></tbody>
+            </table>
+          </fieldset>
         </div>
+
+        <div class="result-section">
+          <h2>利润情景分析</h2>
+          <table class="results-table">
+            <thead>
+              <tr><th>成本/利润项目</th><th>自然订单</th><th>广告订单</th><th>达人带货(自然)</th><th>达人带货(广告)</th></tr>
+              <tr style="background:#f8f9fa;">
+                <td><label for="vol1" style="font-weight:bold;font-size:.85em;">月预估销量</label></td>
+                <td><input type="number" id="vol1" value="100"/></td><td><input type="number" id="vol2" value="80"/></td>
+                <td><input type="number" id="vol3" value="50"/></td><td><input type="number" id="vol4" value="20"/></td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>售价 (MXN)</td><td id="res-selling-price-1">0.00</td><td id="res-selling-price-2">0.00</td><td id="res-selling-price-3">0.00</td><td id="res-selling-price-4">0.00</td></tr>
+              <tr><td>(-) 基础成本</td><td id="res-fixed-costs-1">0.00</td><td id="res-fixed-costs-2">0.00</td><td id="res-fixed-costs-3">0.00</td><td id="res-fixed-costs-4">0.00</td></tr>
+              <tr><td>(-) 平台服务费</td><td id="res-platform-costs-1">0.00</td><td id="res-platform-costs-2">0.00</td><td id="res-platform-costs-3">0.00</td><td id="res-platform-costs-4">0.00</td></tr>
+              <tr><td>(-) 卖家活动补贴</td><td id="res-campaign-costs-1">0.00</td><td id="res-campaign-costs-2">0.00</td><td id="res-campaign-costs-3">0.00</td><td id="res-campaign-costs-4">0.00</td></tr>
+              <tr><td>(-) 达人带货佣金</td><td id="res-affiliate-costs-1">0.00</td><td id="res-affiliate-costs-2">0.00</td><td id="res-affiliate-costs-3">0.00</td><td id="res-affiliate-costs-4">0.00</td></tr>
+              <tr><td>(-) 单件广告成本</td><td id="res-ad-costs-1">0.00</td><td id="res-ad-costs-2">0.00</td><td id="res-ad-costs-3">0.00</td><td id="res-ad-costs-4">0.00</td></tr>
+              <tr class="profit-row"><td>单件净利润 (MXN)</td><td id="res-profit-mxn-1">0.00</td><td id="res-profit-mxn-2">0.00</td><td id="res-profit-mxn-3">0.00</td><td id="res-profit-mxn-4">0.00</td></tr>
+              <tr class="cny-profit-row"><td>单件净利润 (CNY)</td><td id="res-profit-cny-1">0.00</td><td id="res-profit-cny-2">0.00</td><td id="res-profit-cny-3">0.00</td><td id="res-profit-cny-4">0.00</td></tr>
+              <tr class="profit-row"><td>渠道月度总利润 (MXN)</td><td id="res-monthly-profit-mxn-1">0.00</td><td id="res-monthly-profit-mxn-2">0.00</td><td id="res-monthly-profit-mxn-3">0.00</td><td id="res-monthly-profit-mxn-4">0.00</td></tr>
+              <tr class="cny-profit-row"><td>渠道月度总利润 (CNY)</td><td id="res-monthly-profit-cny-1">0.00</td><td id="res-monthly-profit-cny-2">0.00</td><td id="res-monthly-profit-cny-3">0.00</td><td id="res-monthly-profit-cny-4">0.00</td></tr>
+              <tr class="total-profit-row"><td colspan="4" style="text-align:right;font-weight:bold;">单品月度总利润</td><td id="res-total-monthly-profit">0.00 MXN</td></tr>
+            </tbody>
+          </table>
+
+          <div class="sub-results">
+            <div class="info-box"><span class="label">📈 广告投产比 (ROI)</span><span class="value" id="adROI">N/A</span></div>
+            <div class="info-box"><span class="label">🛡️ 保本售价 (通用达人)</span><span class="value" id="breakevenPrice">0.00 MXN</span></div>
+            <div class="info-box"><span class="label">🏬 店铺月度总利润</span><span class="value" id="storeMonthly">0.00 MXN</span></div>
+            <div class="info-box"><span class="label">🗓️ 店铺年度总利润</span><span class="value" id="storeYearly">0.00 MXN</span></div>
+            <div class="info-box"><span class="label">📅 当前单品年度总利润</span><span class="value" id="productYearly">0.00 MXN</span></div>
+          </div>
+        </div>
+      </div>
+      <!-- <<<<<<< 结束：v11.1 的模拟器区域（原样拷贝） <<<<<<< -->
     </div>
 
-    <script>
-        function updateCalculations() {
-            // --- 1. 获取所有输入值 ---
-            const baseProductCost = parseFloat(document.getElementById('productCost').value) || 0;
-            const damageRate = parseFloat(document.getElementById('damageRate').value) / 100 || 0;
-            const shippingCost = parseFloat(document.getElementById('shippingCost').value) || 0;
-            const warehouseCost = parseFloat(document.getElementById('warehouseCost').value) || 0;
-            const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
-            const sellingPrice = parseFloat(document.getElementById('sellingPrice').value) || 0;
-            const platformRate = parseFloat(document.getElementById('platformCommission').value) / 100 || 0;
-            const affiliateRate = parseFloat(document.getElementById('affiliateCommission').value) / 100 || 0;
-            
-            const isCampaignActive = document.getElementById('isCampaignActive').checked;
-            const campaignDiscountRate = parseFloat(document.getElementById('campaignDiscountRate').value) / 100 || 0;
-            const minOrderValue = parseFloat(document.getElementById('minOrderValue').value) || 0;
-            const maxDiscountCap = parseFloat(document.getElementById('maxDiscountCap').value) || Infinity;
-            const sellerFundingRatio = parseFloat(document.getElementById('sellerFundingRatio').value) / 100 || 0;
+    <!-- ============ 批量模块（保持一致） ============ -->
+    <div id="module-batch" class="module-content">
+      <h2>批量利润分析 (CSV)</h2>
+      <div class="batch-processing">
+        <p>上传包含多个产品的CSV文件，系统将为您计算所有产品的利润并可自动加入店铺清单。</p>
+        <p><strong>CSV列标题:</strong><br/><code>productName,productCost,damageRate,shippingCost,warehouseCost,sellingPrice,affiliateCommission,adAffiliateCommission</code></p>
+        <button id="download-template-btn" class="save-btn">下载CSV模板</button>
+        <input type="file" id="csv-file-input" accept=".csv" style="margin:20px 0;display:block;margin-inline:auto;"/>
+        <div id="batch-status" style="margin-top:15px;font-weight:bold;"></div>
+      </div>
+    </div>
 
-            // --- 2. 核心计算逻辑 ---
-            // 计入货损，计算实际产品成本
-            const effectiveProductCostCNY = (1 - damageRate > 0) ? baseProductCost / (1 - damageRate) : baseProductCost;
-            const fixedCostsCNY = effectiveProductCostCNY + shippingCost + warehouseCost;
-            const fixedCostsMXN = fixedCostsCNY * exchangeRate;
+    <!-- ============ 报告模块（新增 饼图模式 开关） ============ -->
+    <div id="module-report" class="module-content">
+      <h2>可视化报告</h2>
+      <div class="report-controls" style="margin-bottom:10px;">
+        <label>统计对象：</label>
+        <label><input type="radio" name="report-scope" value="product" checked/> 单品</label>
+        <label><input type="radio" name="report-scope" value="store"/> 店铺</label>
 
-            // 基于售价计算利润
-            const platformCostsMXN = sellingPrice * platformRate;
-            const affiliateBase = sellingPrice - platformCostsMXN;
-            const affiliateCostsMXN = affiliateBase * affiliateRate;
+        <span style="width:8px;"></span>
+        <label>时间维度：</label>
+        <label><input type="radio" name="report-period" value="monthly" checked/> 月度</label>
+        <label><input type="radio" name="report-period" value="yearly"/> 年度</label>
 
-            let campaignCostsMXN = 0;
-            let customerDiscount = 0;
-            if (isCampaignActive && sellingPrice >= minOrderValue) {
-                const potentialDiscount = sellingPrice * campaignDiscountRate;
-                customerDiscount = Math.min(potentialDiscount, maxDiscountCap);
-                campaignCostsMXN = customerDiscount * sellerFundingRatio;
+        <span style="width:8px;"></span>
+        <label for="pie-mode-select"><strong>饼图模式：</strong></label>
+        <select id="pie-mode-select">
+          <option value="productCost">单品成本构成</option>
+          <option value="storeProducts">店铺产品占比</option>
+          <option value="storeChannels">店铺渠道占比</option>
+        </select>
+      </div>
+
+      <button id="export-pdf-btn" class="save-btn" style="margin-bottom: 12px;">导出为 PDF</button>
+
+      <div id="report-content">
+        <div class="chart-container">
+          <div class="chart-wrapper">
+            <h3 id="chart1-title">各渠道月度总利润 (单品)</h3>
+            <canvas id="profit-bar-chart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h3 id="chart2-title">成本构成分析 (广告+达人单)</h3>
+            <canvas id="cost-pie-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登录弹窗 -->
+  <div class="modal" id="login-modal">
+    <div class="box">
+      <h3 id="auth-title">登录 / 注册</h3>
+      <div class="row">
+        <input id="auth-username" placeholder="用户名（字母数字下划线）"/>
+      </div>
+      <div class="row">
+        <input id="auth-password" type="password" placeholder="密码（不少于 8 位）"/>
+      </div>
+      <div class="actions">
+        <button id="go-signup">注册</button>
+        <button class="primary" id="go-login">登录</button>
+        <button id="close-auth">关闭</button>
+      </div>
+      <small style="color:#666;">登录成功后会自动与云端同步你的预设和店铺清单。</small>
+    </div>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    /***********************
+     * 简单前端配置
+     ***********************/
+    // 针对你的 GitHub Pages 路径 https://yanjianyecao.github.io/tiktok-calculator/
+const WORKER_API = 'https://<你的-worker子域>.workers.dev/api';  // ← 改成你的 Cloudflare Worker 地址
+const APP_CONFIG = {
+  // 在 GitHub Pages 上用 Worker 域名，在同域（Cloudflare Pages/Functions）则走 /api
+  API_BASE: (location.hostname === 'yanjianyecao.github.io' ? WORKER_API : '/api'),
+  TOKEN_KEY: 'auth_token',
+  USER_KEY: 'auth_user',
+};
+
+
+    /***********************
+     * 全局状态/工具
+     ***********************/
+    let profitBarChart, costPieChart, rafId=null;
+
+    function withFrozenScroll(cb){const x=window.scrollX,y=window.scrollY;try{cb();}finally{window.scrollTo(x,y);}}
+    function withFrozenScrollAsync(cb){const x=window.scrollX,y=window.scrollY;cb();requestAnimationFrame(()=>window.scrollTo(x,y));}
+    function throttle(fn, wait=120){let t=0;return function(...args){const now=Date.now();if(now-t>wait){t=now;fn.apply(this,args);}}}
+    function isReportVisible(){const el=document.getElementById('module-report');return el&&getComputedStyle(el).display!=='none';}
+    function scheduleUpdateCharts(){if(rafId)cancelAnimationFrame(rafId);rafId=requestAnimationFrame(()=>{updateCharts();rafId=null;});}
+    function generatePalette(n){const base=['#4A90E2','#50E3C2','#F5A623','#B8E986','#BD10E0','#7ED321','#D0021B','#F8E71C','#417505','#9013FE','#8B572A','#03A9F4','#00BCD4','#9C27B0','#FFC107','#009688'];const out=[];for(let i=0;i<n;i++)out.push(base[i%base.length]);return out;}
+    function updateElement(id,val,isHTML=false){const el=document.getElementById(id);if(!el)return;if(isHTML)el.innerHTML=val;else el.textContent=val;}
+    function updateProfitCell(id,val){const el=document.getElementById(id);if(!el)return;el.textContent=val.toFixed(2);el.className='profit-value '+(val>=0?'positive':'negative');}
+
+    /***********************
+     * 模拟器/计算（与 v11.1 一致）
+     ***********************/
+    function openModule(evt,moduleName){document.querySelectorAll('.module-content').forEach(mc=>mc.style.display="none");const target=document.getElementById(moduleName);if(target)target.style.display="block";document.querySelectorAll('.main-nav button').forEach(b=>b.classList.remove('active'));evt.currentTarget.classList.add('active');if(moduleName==='module-report'){requestAnimationFrame(scheduleUpdateCharts);setTimeout(scheduleUpdateCharts,50);}}
+    function openTab(evt,tabName){document.querySelectorAll('#module-simulator .tab-content').forEach(tc=>tc.style.display="none");document.getElementById(tabName).style.display="block";document.querySelectorAll('.tab-nav button').forEach(b=>b.classList.remove('active'));evt.currentTarget.classList.add('active');}
+
+    function getAllInputValues(){
+      const ids=document.querySelectorAll('.preset-input,[id^="vol"]');const v={};
+      ids.forEach(el=>{const key=el.id.replace(/-/g,'_');v[key]=(el.type==='checkbox')?el.checked:(parseFloat(el.value)||0);});
+      return {
+        baseProductCost:v.productCost,damageRate:v.damageRate/100,shippingCost:v.shippingCost,warehouseCost:v.warehouseCost,
+        cnyToMxnRate:v.cnyToMxnRate||1,usdToMxnRate:v.usdToMxnRate||1,sellingPrice:v.sellingPrice,
+        adSpendTotalUSD:v.adSpendTotalUSD,adOrders:v.adOrders,
+        platformRate:v.platformCommission/100,affiliateRate:v.affiliateCommission/100,adAffiliateRate:v.adAffiliateCommission/100,
+        isCampaignActive:v.isCampaignActive,campaignDiscountRate:v.campaignDiscountRate/100,minOrderValue:v.minOrderValue,
+        maxDiscountCap:v.maxDiscountCap||Infinity,sellerFundingRatio:v.sellerFundingRatio/100,
+        vol1:v.vol1,vol2:v.vol2,vol3:v.vol3,vol4:v.vol4
+      };
+    }
+
+    function runCalculationEngine(inputs){
+      const effectiveProductCostCNY=(1-inputs.damageRate>0)?inputs.baseProductCost/(1-inputs.damageRate):inputs.baseProductCost;
+      const fixedCostsCNY=effectiveProductCostCNY+inputs.shippingCost+inputs.warehouseCost;
+      const fixedCostsMXN=fixedCostsCNY*inputs.cnyToMxnRate;
+      const platformCostsMXN=inputs.sellingPrice*inputs.platformRate;
+      const affiliateBase=inputs.sellingPrice-platformCostsMXN;
+
+      let campaignCostsMXN=0;
+      if(inputs.isCampaignActive && inputs.sellingPrice>=inputs.minOrderValue){
+        const potentialDiscount=inputs.sellingPrice*inputs.campaignDiscountRate;
+        campaignCostsMXN=Math.min(potentialDiscount,inputs.maxDiscountCap)*inputs.sellerFundingRatio;
+      }
+      const adCostPerOrderMXN=(inputs.adOrders>0)?(inputs.adSpendTotalUSD*inputs.usdToMxnRate/inputs.adOrders):0;
+
+      const scenarios=[
+        {id:1,name:"自然订单",affiliateCost:0,adCost:0,volume:inputs.vol1},
+        {id:2,name:"广告订单",affiliateCost:0,adCost:adCostPerOrderMXN,volume:inputs.vol2},
+        {id:3,name:"达人带货(自然)",affiliateCost:affiliateBase*inputs.affiliateRate,adCost:0,volume:inputs.vol3},
+        {id:4,name:"达人带货(广告)",affiliateCost:affiliateBase*inputs.adAffiliateRate,adCost:adCostPerOrderMXN,volume:inputs.vol4}
+      ];
+
+      let totalMonthlyProfitMXN=0;
+      const results={scenarios:[],totals:{},auxiliary:{}};
+      scenarios.forEach(sc=>{
+        const costs={fixedCostsMXN,platformCostsMXN,campaignCostsMXN,affiliateCost:sc.affiliateCost,adCost:sc.adCost};
+        const totalCosts=Object.values(costs).reduce((a,b)=>a+b,0);
+        const profitMXN=inputs.sellingPrice-totalCosts;
+        const profitCNY=profitMXN/inputs.cnyToMxnRate;
+        const monthlyProfitMXN=profitMXN*sc.volume;
+        const monthlyProfitCNY=monthlyProfitMXN/inputs.cnyToMxnRate;
+        totalMonthlyProfitMXN+=monthlyProfitMXN;
+        results.scenarios.push({...sc,...costs,totalCosts,profitMXN,profitCNY,monthlyProfitMXN,monthlyProfitCNY});
+      });
+
+      results.totals={totalMonthlyProfitMXN,totalMonthlyProfitCNY:totalMonthlyProfitMXN/inputs.cnyToMxnRate};
+
+      const adSalesTotalMXN_calc=inputs.sellingPrice*inputs.adOrders;
+      const adSpendTotalMXN=inputs.adSpendTotalUSD*inputs.usdToMxnRate;
+      let adROI=0;if(adSpendTotalMXN>0){adROI=(adSalesTotalMXN_calc-adSpendTotalMXN)/adSpendTotalMXN;}
+
+      let breakevenPrice=0;
+      const variableRateBreakeven=inputs.platformRate+(1-inputs.platformRate)*inputs.affiliateRate;
+      breakevenPrice=(variableRateBreakeven<1)?(fixedCostsMXN/(1-variableRateBreakeven)):Infinity;
+
+      results.auxiliary={adROI,breakevenPrice};
+      return results;
+    }
+
+    function updateUI(results){
+      results.scenarios.forEach(sc=>{
+        updateElement(`res-selling-price-${sc.id}`, getAllInputValues().sellingPrice.toFixed(2));
+        updateElement(`res-fixed-costs-${sc.id}`, `-${sc.fixedCostsMXN.toFixed(2)}`);
+        updateElement(`res-platform-costs-${sc.id}`, `-${sc.platformCostsMXN.toFixed(2)}`);
+        updateElement(`res-campaign-costs-${sc.id}`, `-${sc.campaignCostsMXN.toFixed(2)}`);
+        updateElement(`res-affiliate-costs-${sc.id}`, `-${sc.affiliateCost.toFixed(2)}`);
+        updateElement(`res-ad-costs-${sc.id}`, `-${sc.adCost.toFixed(2)}`);
+        updateProfitCell(`res-profit-mxn-${sc.id}`, sc.profitMXN);
+        updateProfitCell(`res-profit-cny-${sc.id}`, sc.profitCNY);
+        updateProfitCell(`res-monthly-profit-mxn-${sc.id}`, sc.monthlyProfitMXN);
+        updateProfitCell(`res-monthly-profit-cny-${sc.id}`, sc.monthlyProfitCNY);
+      });
+      updateElement('res-total-monthly-profit', `${results.totals.totalMonthlyProfitMXN.toFixed(2)} MXN<br><small>≈ ${results.totals.totalMonthlyProfitCNY.toFixed(2)} CNY</small>`, true);
+      updateElement('adROI', (results.auxiliary.adROI!==0 && isFinite(results.auxiliary.adROI)) ? `${results.auxiliary.adROI.toFixed(2)} : 1` : 'N/A');
+      updateElement('breakevenPrice', (results.auxiliary.breakevenPrice===Infinity)?'无法保本':`${results.auxiliary.breakevenPrice.toFixed(2)} MXN`);
+
+      const thisMonthly=results.totals.totalMonthlyProfitMXN;
+      updateElement('productYearly', `${(thisMonthly*12).toFixed(2)} MXN`);
+      const agg=computeStoreSummary();
+      updateElement('storeMonthly', `${agg.totalMonthlyProfitMXN.toFixed(2)} MXN`);
+      updateElement('storeYearly', `${(agg.totalMonthlyProfitMXN*12).toFixed(2)} MXN`);
+    }
+
+    function updateAll(){
+      withFrozenScroll(()=>{
+        const inputs=getAllInputValues();
+        const results=runCalculationEngine(inputs);
+        updateUI(results);
+        if(isReportVisible()) scheduleUpdateCharts();
+        renderStoreTable();
+        maybeCloudAutoSave();
+      });
+    }
+
+    /***********************
+     * 店铺聚合（与 v11.1 一致）
+     ***********************/
+    const STORE_STORAGE_KEY='tiktokStoreProducts_v1';
+    const PRESET_STORAGE_KEY='tiktokProfitPresets_v10';
+
+    function getStoreProducts(){return JSON.parse(localStorage.getItem(STORE_STORAGE_KEY))||[];}
+    function saveStoreProducts(arr){localStorage.setItem(STORE_STORAGE_KEY,JSON.stringify(arr));}
+
+    function addCurrentToStore(){
+      const name=(document.getElementById('preset-name').value||'未命名商品').trim();
+      const inputs=getAllInputValues();
+      const list=getStoreProducts(); list.push({name,inputs}); saveStoreProducts(list);
+      renderStoreTable(); alert(`已添加“${name}”到店铺清单`); scheduleUpdateCharts(); maybeCloudAutoSave();
+    }
+    function removeStoreAt(index){const list=getStoreProducts(); list.splice(index,1); saveStoreProducts(list); renderStoreTable(); scheduleUpdateCharts(); maybeCloudAutoSave();}
+    function clearStore(){if(!confirm('确定清空店铺产品清单吗？'))return; saveStoreProducts([]); renderStoreTable(); scheduleUpdateCharts(); maybeCloudAutoSave();}
+
+    function computeStoreSummary(){
+      const list=getStoreProducts(); let total=0; const channelTotals=[0,0,0,0]; const perProduct=[];
+      list.forEach(p=>{const r=runCalculationEngine(p.inputs); total+=r.totals.totalMonthlyProfitMXN; r.scenarios.forEach((sc,i)=>channelTotals[i]+=sc.monthlyProfitMXN); perProduct.push({name:p.name,monthly:r.totals.totalMonthlyProfitMXN});});
+      return {totalMonthlyProfitMXN:total,channelTotalsMXN:channelTotals,perProduct};
+    }
+
+    function renderStoreTable(){
+      const tbody=document.getElementById('store-table-body'); if(!tbody)return;
+      const list=getStoreProducts();
+      if(list.length===0){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:#999;">暂无产品</td></tr>'; return;}
+      tbody.innerHTML='';
+      list.forEach((p,idx)=>{
+        const r=runCalculationEngine(p.inputs);
+        const vol=p.inputs.vol1+p.inputs.vol2+p.inputs.vol3+p.inputs.vol4;
+        const tr=document.createElement('tr');
+        tr.innerHTML=`<td>${p.name||'未命名'}</td>
+          <td class="num">${(p.inputs.sellingPrice||0).toFixed(2)}</td>
+          <td class="num">${vol}</td>
+          <td class="num">${r.totals.totalMonthlyProfitMXN.toFixed(2)}</td>
+          <td><button class="delete-btn" data-idx="${idx}" style="padding:4px 8px;">删除</button></td>`;
+        tbody.appendChild(tr);
+      });
+      tbody.querySelectorAll('button[data-idx]').forEach(btn=>btn.addEventListener('click',e=>removeStoreAt(parseInt(e.currentTarget.getAttribute('data-idx')))));
+
+      const agg=computeStoreSummary();
+      updateElement('storeMonthly', `${agg.totalMonthlyProfitMXN.toFixed(2)} MXN`);
+      updateElement('storeYearly', `${(agg.totalMonthlyProfitMXN*12).toFixed(2)} MXN`);
+    }
+
+    /***********************
+     * 报表图表（新增饼图模式开关）
+     ***********************/
+    function enforcePieModeAvailability(){
+      const scope=document.querySelector('input[name="report-scope"]:checked').value;
+      const select=document.getElementById('pie-mode-select');
+      // 单品只允许“单品成本构成”
+      if(scope==='product'){
+        select.value='productCost';
+        [...select.options].forEach(opt=>opt.disabled=(opt.value!=='productCost'));
+      }else{
+        // 店铺允许两种占比；也允许你看“单品成本构成”，但意义不大，这里默认禁用以避免误解
+        [...select.options].forEach(opt=>opt.disabled=(opt.value==='productCost'));
+        if(select.value==='productCost') select.value='storeProducts';
+      }
+    }
+
+    function updateCharts(){
+      withFrozenScrollAsync(()=>{
+        try{
+          const scope=document.querySelector('input[name="report-scope"]:checked').value; // product | store
+          const period=document.querySelector('input[name="report-period"]:checked').value; // monthly | yearly
+          const pieMode=document.getElementById('pie-mode-select').value; // productCost | storeProducts | storeChannels
+          const multiplier=(period==='yearly')?12:1;
+          const commonOpts={responsive:true,maintainAspectRatio:false,animation:false,resizeDelay:0};
+          const chart1Title=document.getElementById('chart1-title');
+          const chart2Title=document.getElementById('chart2-title');
+
+          // 柱图：各渠道利润
+          const barCtx=document.getElementById('profit-bar-chart').getContext('2d');
+          if(profitBarChart) profitBarChart.destroy();
+
+          if(scope==='product'){
+            const res=runCalculationEngine(getAllInputValues());
+            chart1Title.textContent=`各渠道${period==='yearly'?'年度':'月度'}总利润 (单品)`;
+            profitBarChart=new Chart(barCtx,{type:'bar',
+              data:{labels:res.scenarios.map(s=>s.name),
+                datasets:[{label:`${period==='yearly'?'年度':'月度'}总利润 (MXN)`,
+                  data:res.scenarios.map(s=>s.monthlyProfitMXN*multiplier),
+                  backgroundColor:['#3498db','#9b59b6','#2ecc71','#f1c40f']}]},
+              options:commonOpts
+            });
+
+            // 饼图：根据饼图模式（单品只能看成本构成）
+            const pieCtx=document.getElementById('cost-pie-chart').getContext('2d');
+            if(costPieChart) costPieChart.destroy();
+            const sc=res.scenarios[3];
+            chart2Title.textContent='成本构成分析 (广告+达人单)';
+            costPieChart=new Chart(pieCtx,{type:'pie',
+              data:{labels:['基础成本','平台服务费','卖家活动补贴','达人佣金','单件广告成本'],
+                datasets:[{data:[sc.fixedCostsMXN,sc.platformCostsMXN,sc.campaignCostsMXN,sc.affiliateCost,sc.adCost].map(v=>Math.max(0,v)),
+                  backgroundColor:['#e74c3c','#f39c12','#f1c40f','#9b59b6','#3498db']}]},
+              options:commonOpts
+            });
+
+          }else{
+            const agg=computeStoreSummary();
+            const labels=['自然订单','广告订单','达人带货(自然)','达人带货(广告)'];
+            chart1Title.textContent=`店铺各渠道${period==='yearly'?'年度':'月度'}总利润 (MXN)`;
+            profitBarChart=new Chart(barCtx,{type:'bar',
+              data:{labels,datasets:[{label:`${period==='yearly'?'年度':'月度'}总利润 (MXN)`,
+                data:agg.channelTotalsMXN.map(v=>v*multiplier),
+                backgroundColor:['#3498db','#9b59b6','#2ecc71','#f1c40f']}]},
+              options:commonOpts
+            });
+
+            // 饼图：店铺模式有两种
+            const pieCtx=document.getElementById('cost-pie-chart').getContext('2d');
+            if(costPieChart) costPieChart.destroy();
+
+            if(pieMode==='storeProducts'){
+              chart2Title.textContent=`店铺各产品${period==='yearly'?'年度':'月度'}总利润占比 (Top 12)`;
+              const sorted=agg.perProduct.slice().sort((a,b)=>b.monthly-a.monthly).slice(0,12);
+              const dataVals=sorted.map(x=>x.monthly*multiplier);
+              const dataLabels=sorted.map(x=>x.name||'未命名');
+              costPieChart=new Chart(pieCtx,{type:'pie',
+                data:{labels:dataLabels,datasets:[{data:dataVals,backgroundColor:generatePalette(dataLabels.length)}]},
+                options:commonOpts
+              });
+            }else{
+              chart2Title.textContent=`店铺各渠道${period==='yearly'?'年度':'月度'}总利润占比`;
+              const dataVals=agg.channelTotalsMXN.map(v=>v*multiplier);
+              costPieChart=new Chart(pieCtx,{type:'pie',
+                data:{labels:['自然订单','广告订单','达人自然','达人广告'],
+                  datasets:[{data:dataVals,backgroundColor:['#3498db','#9b59b6','#2ecc71','#f1c40f']}]},
+                options:commonOpts
+              });
             }
+          }
+        }catch(e){console.error('图表渲染失败:',e);}
+      });
+    }
 
-            const totalCostsMXN = fixedCostsMXN + platformCostsMXN + affiliateCostsMXN + campaignCostsMXN;
-            const profitMXN = sellingPrice - totalCostsMXN;
-            const profitCNY = profitMXN / exchangeRate;
-            const profitMargin = (sellingPrice > 0) ? (profitMXN / sellingPrice) * 100 : 0;
-            const customerFinalPrice = sellingPrice - customerDiscount;
+    /***********************
+     * 目标定价 / 预设 / CSV / PDF（与 v11.1 一致，省略注释）
+     ***********************/
+    function calculateGoalSeek(){
+      const inputs=getAllInputValues();
+      const targetProfitCNY=parseFloat(document.getElementById('targetProfitCNY').value)||0;
+      if(targetProfitCNY===0){updateElement('goal-seek-result','请输入期望利润');return;}
+      const targetProfitMXN=targetProfitCNY*inputs.cnyToMxnRate;
+      const fixedCosts=(inputs.baseProductCost/(1-inputs.damageRate)+inputs.shippingCost+inputs.warehouseCost)*inputs.cnyToMxnRate;
+      const adCost=(inputs.adOrders>0)?(inputs.adSpendTotalUSD*inputs.usdToMxnRate/inputs.adOrders):0;
+      const platformRate=inputs.platformRate, adAffiliateRate=inputs.adAffiliateRate;
+      const campaignRate=inputs.isCampaignActive?(inputs.campaignDiscountRate*inputs.sellerFundingRatio):0;
+      const denom=1-campaignRate-platformRate-((1-platformRate)*adAffiliateRate);
+      if(denom<=0){updateElement('goal-seek-result','成本率超100%，无法定价！');return;}
+      const price=(targetProfitMXN+fixedCosts+adCost)/denom;
+      updateElement('goal-seek-result',`建议零售价: <strong>${price.toFixed(2)} MXN</strong> (广告达人单)`,true);
+    }
 
-            // 计算保本售价
-            let breakevenPrice = 0;
-            const variableRateWithoutCampaign = platformRate + (1 - platformRate) * affiliateRate;
-            if (variableRateWithoutCampaign < 1) {
-                const breakevenPriceNoCampaign = fixedCostsMXN / (1 - variableRateWithoutCampaign);
-                
-                if (isCampaignActive) {
-                    const variableRateWithCampaignUncapped = variableRateWithoutCampaign + (campaignDiscountRate * sellerFundingRatio);
-                    if (variableRateWithCampaignUncapped < 1) {
-                        let bepUncapped = fixedCostsMXN / (1 - variableRateWithCampaignUncapped);
-                        
-                        if (bepUncapped < minOrderValue) {
-                             breakevenPrice = breakevenPriceNoCampaign;
-                        } else {
-                            const discountAtBep = bepUncapped * campaignDiscountRate;
-                            if (discountAtBep > maxDiscountCap) {
-                                // Cap is triggered, recalculate
-                                const fixedCampaignCost = maxDiscountCap * sellerFundingRatio;
-                                breakevenPrice = (fixedCostsMXN + fixedCampaignCost) / (1 - variableRateWithoutCampaign);
-                            } else {
-                                breakevenPrice = bepUncapped;
-                            }
-                        }
-                    } else {
-                         breakevenPrice = Infinity; // Costs exceed 100%
-                    }
-                } else {
-                    breakevenPrice = breakevenPriceNoCampaign;
-                }
-            } else {
-                breakevenPrice = Infinity; // Costs exceed 100%
-            }
+    function savePreset(){
+      const name=document.getElementById('preset-name').value.trim();
+      if(!name){alert('请输入预设名称！');return;}
+      const inputs=document.querySelectorAll('.preset-input');const data={};inputs.forEach(i=>data[i.id]=(i.type==='checkbox')?i.checked:i.value);
+      const presets=JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY))||{};presets[name]=data;
+      localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(presets));populatePresetDropdown();document.getElementById('preset-select').value=name;alert(`预设 "${name}" 已保存！`);maybeCloudAutoSave();
+    }
+    function loadPreset(){const name=document.getElementById('preset-select').value;if(!name)return;const presets=JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY))||{};const d=presets[name];if(!d)return;Object.keys(d).forEach(id=>{const i=document.getElementById(id);if(i){if(i.type==='checkbox')i.checked=d[id];else i.value=d[id];}});document.getElementById('preset-name').value=name;updateAll();document.getElementById('isCampaignActive').dispatchEvent(new Event('change'));}
+    function deletePreset(){const name=document.getElementById('preset-select').value;if(!name||!confirm(`您确定要删除预设 "${name}" 吗？`))return;const p=JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY))||{};delete p[name];localStorage.setItem(PRESET_STORAGE_KEY,JSON.stringify(p));populatePresetDropdown();document.getElementById('preset-name').value='';alert(`预设 "${name}" 已删除！`);maybeCloudAutoSave();}
+    function populatePresetDropdown(){const p=JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY))||{};const s=document.getElementById('preset-select');s.innerHTML='<option value="">-- 选择 --</option>';for(const n in p){const o=document.createElement('option');o.value=n;o.textContent=n;s.appendChild(o);}}
 
+    function downloadCSVTemplate(){const headers="productName,productCost,damageRate,shippingCost,warehouseCost,sellingPrice,affiliateCommission,adAffiliateCommission";const blob=new Blob([headers],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download='template.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);}
+    function handleCSVUpload(e){const f=e.target.files[0];if(!f)return;updateElement('batch-status','正在处理文件...');Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>processCSVData(r.data),error:err=>updateElement('batch-status',`CSV解析失败: ${err.message}`)});}
+    function processCSVData(data){const base=getAllInputValues();const out=[];const store=getStoreProducts();data.forEach((row,i)=>{const inputs={...base,baseProductCost:parseFloat(row.productCost)||0,damageRate:(parseFloat(row.damageRate)||0)/100,shippingCost:parseFloat(row.shippingCost)||0,warehouseCost:parseFloat(row.warehouseCost)||0,sellingPrice:parseFloat(row.sellingPrice)||0,affiliateRate:(parseFloat(row.affiliateCommission)||0)/100,adAffiliateRate:(parseFloat(row.adAffiliateCommission)||0)/100};store.push({name:row.productName||`CSV商品${i+1}`,inputs});const r=runCalculationEngine(inputs);out.push({'产品名称':row.productName,'零售价 (MXN)':inputs.sellingPrice.toFixed(2),'利润_自然订单 (CNY)':r.scenarios[0].profitCNY.toFixed(2),'利润_广告订单 (CNY)':r.scenarios[1].profitCNY.toFixed(2),'利润_达人自然 (CNY)':r.scenarios[2].profitCNY.toFixed(2),'利润_达人广告 (CNY)':r.scenarios[3].profitCNY.toFixed(2)});});saveStoreProducts(store);renderStoreTable();scheduleUpdateCharts();maybeCloudAutoSave();const csv=Papa.unparse(out);const blob=new Blob([`\uFEFF${csv}`],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');const url=URL.createObjectURL(blob);a.href=url;a.download='profit_analysis_results.csv';document.body.appendChild(a);a.click();document.body.removeChild(a);updateElement('batch-status',`处理完成！已处理 ${data.length} 个产品，并加入店铺。`);}
+    function exportPDF(){const content=document.getElementById('report-content');const btn=document.getElementById('export-pdf-btn');btn.textContent='正在生成...';html2canvas(content,{scale:2,useCORS:true}).then(c=>{const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'landscape',unit:'px',format:[c.width,c.height]});pdf.addImage(c.toDataURL('image/png'),'PNG',0,0,c.width,c.height);pdf.save('profit_report.pdf');btn.textContent='导出为 PDF';}).catch(err=>{console.error('PDF导出失败:',err);alert('导出PDF失败，详情见控制台。');btn.textContent='导出为 PDF';});}
 
-            // --- 3. 显示结果 ---
-            document.getElementById('effectiveCost').textContent = `${effectiveProductCostCNY.toFixed(2)} CNY`;
-            document.getElementById('fixedCosts').textContent = `${fixedCostsMXN.toFixed(2)} MXN`;
-            document.getElementById('platformCosts').textContent = `${platformCostsMXN.toFixed(2)} MXN`;
-            document.getElementById('affiliateCosts').textContent = `${affiliateCostsMXN.toFixed(2)} MXN`;
-            document.getElementById('campaignCosts').textContent = `${campaignCostsMXN.toFixed(2)} MXN`;
-            document.getElementById('totalCosts').textContent = `${totalCostsMXN.toFixed(2)} MXN`;
-            
-            const profitMxnEl = document.getElementById('profit-mxn');
-            profitMxnEl.textContent = `${profitMXN.toFixed(2)} MXN`;
-            profitMxnEl.className = profitMXN >= 0 ? 'value profit-value positive' : 'value profit-value negative';
+    /***********************
+     * 登录 & 云端同步（Cloudflare Worker）
+     ***********************/
+    function showLogin(){document.getElementById('login-modal').style.display='flex';}
+    function hideLogin(){document.getElementById('login-modal').style.display='none';}
+    function setAuthedUI(username){document.getElementById('auth-status').textContent=username?`已登录：${username}`:'未登录';document.getElementById('btn-login').classList.toggle('hidden',!!username);document.getElementById('btn-logout').classList.toggle('hidden',!username);}
 
-            const profitCnyEl = document.getElementById('profit-cny');
-            profitCnyEl.textContent = `≈ ${profitCNY.toFixed(2)} CNY`;
-            profitCnyEl.className = profitCNY >= 0 ? 'value profit-value positive' : 'value profit-value negative';
+    function getToken(){return localStorage.getItem(APP_CONFIG.TOKEN_KEY)||'';}
+    function setToken(t){if(t)localStorage.setItem(APP_CONFIG.TOKEN_KEY,t);else localStorage.removeItem(APP_CONFIG.TOKEN_KEY);}
+    function setUser(u){if(u)localStorage.setItem(APP_CONFIG.USER_KEY,JSON.stringify(u));else localStorage.removeItem(APP_CONFIG.USER_KEY);}
+    function getUser(){try{return JSON.parse(localStorage.getItem(APP_CONFIG.USER_KEY)||'null');}catch{return null;}}
 
-            document.getElementById('profitMargin').textContent = `${profitMargin.toFixed(2)} %`;
-            document.getElementById('customerDiscount').textContent = `${customerDiscount.toFixed(2)} MXN`;
-            document.getElementById('customerFinalPrice').textContent = `${customerFinalPrice.toFixed(2)} MXN`;
-            document.getElementById('breakevenPrice').textContent = (breakevenPrice === Infinity) ? "无法保本" : `${breakevenPrice.toFixed(2)} MXN`;
-        }
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            const campaignToggle = document.getElementById('isCampaignActive');
-            
-            function toggleCampaignFields() {
-                const isChecked = campaignToggle.checked;
-                const campaignFieldset = document.getElementById('campaignRules');
-                const campaignInputs = campaignFieldset.getElementsByTagName('input');
+    async function api(path,method='GET',body){
+      const headers={'Content-Type':'application/json'};
+      const t=getToken(); if(t) headers['Authorization']=`Bearer ${t}`;
+      const res=await fetch(`${APP_CONFIG.API_BASE}${path}`,{method,headers,body:body?JSON.stringify(body):undefined,credentials:'omit'});
+      if(res.status===401){setToken(''); setUser(null); setAuthedUI(null);}
+      if(!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+      return await res.json();
+    }
 
-                campaignFieldset.classList.toggle('disabled', !isChecked);
-                for (let input of campaignInputs) {
-                    input.disabled = !isChecked;
-                }
-            }
+    async function doSignup(){
+      const username=document.getElementById('auth-username').value.trim();
+      const password=document.getElementById('auth-password').value;
+      if(!/^[A-Za-z0-9_]{3,30}$/.test(username)){alert('用户名只允许字母/数字/下划线，3-30位');return;}
+      if(password.length<8){alert('密码至少 8 位');return;}
+      await api('/signup','POST',{username,password});
+      alert('注册成功，请继续登录'); 
+    }
 
-            campaignToggle.addEventListener('change', toggleCampaignFields);
-            
-            // Set initial state on page load
-            toggleCampaignFields();
-            updateCalculations();
+    async function doLogin(){
+      const username=document.getElementById('auth-username').value.trim();
+      const password=document.getElementById('auth-password').value;
+      const data=await api('/login','POST',{username,password});
+      setToken(data.token); setUser({username}); setAuthedUI(username); hideLogin();
+      await cloudLoadAll(); // 登录后拉取云端数据
+      updateAll();
+    }
 
-            // Attach event listener to the button
-            document.querySelector('button').addEventListener('click', updateCalculations);
-        });
-    </script>
+    async function doLogout(){
+      setToken(''); setUser(null); setAuthedUI(null);
+      alert('已退出登录（本地数据保留）');
+    }
 
+    // 云端同步：把预设与店铺清单存入 KV
+    async function cloudSaveAll(){
+      if(!getToken()) return;
+      const payload={
+        presets: JSON.parse(localStorage.getItem(PRESET_STORAGE_KEY)||'{}'),
+        storeProducts: getStoreProducts()
+      };
+      await api('/data','POST',payload);
+    }
+    async function cloudLoadAll(){
+      if(!getToken()) return;
+      const data=await api('/data','GET');
+      if(data && (data.presets||data.storeProducts)){
+        if(data.presets){ localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(data.presets)); populatePresetDropdown(); }
+        if(data.storeProducts){ saveStoreProducts(data.storeProducts); renderStoreTable(); }
+      }
+    }
+    function maybeCloudAutoSave(){ if(document.getElementById('sync-cloud').checked) cloudSaveAll().catch(()=>{}); }
+
+    /***********************
+     * 初始化
+     ***********************/
+    document.addEventListener('DOMContentLoaded',()=>{
+      // 事件绑定
+      const handler=throttle(updateAll,120);
+      document.querySelectorAll('input,select').forEach(el=>{el.addEventListener('input',handler);el.addEventListener('change',handler);});
+      document.getElementById('save-preset-btn').addEventListener('click',savePreset);
+      document.getElementById('delete-preset-btn').addEventListener('click',deletePreset);
+      document.getElementById('preset-select').addEventListener('change',loadPreset);
+      document.getElementById('goal-seek-btn').addEventListener('click',calculateGoalSeek);
+      document.getElementById('download-template-btn').addEventListener('click',downloadCSVTemplate);
+      document.getElementById('csv-file-input').addEventListener('change',handleCSVUpload);
+      document.getElementById('export-pdf-btn').addEventListener('click',exportPDF);
+
+      document.getElementById('add-to-store-btn').addEventListener('click',addCurrentToStore);
+      document.getElementById('clear-store-btn').addEventListener('click',clearStore);
+
+      // 报告开关
+      document.querySelectorAll('input[name="report-scope"],input[name="report-period"]').forEach(el=>el.addEventListener('change',()=>{enforcePieModeAvailability();scheduleUpdateCharts();}));
+      document.getElementById('pie-mode-select').addEventListener('change',scheduleUpdateCharts);
+
+      // 登录 UI
+      document.getElementById('btn-login').addEventListener('click',showLogin);
+      document.getElementById('btn-logout').addEventListener('click',doLogout);
+      document.getElementById('go-login').addEventListener('click',doLogin);
+      document.getElementById('go-signup').addEventListener('click',doSignup);
+      document.getElementById('close-auth').addEventListener('click',hideLogin);
+
+      const campaignToggle=document.getElementById('isCampaignActive');
+      function toggleCampaignFields(){const checked=campaignToggle.checked;document.getElementById('campaignRules').classList.toggle('disabled',!checked);document.querySelectorAll('#campaignRules input').forEach(i=>i.disabled=!checked);}
+      campaignToggle.addEventListener('change',toggleCampaignFields);
+
+      // 初始化数据/UI
+      populatePresetDropdown(); toggleCampaignFields(); renderStoreTable(); setAuthedUI(getUser()?.username||null);
+      enforcePieModeAvailability(); updateAll(); openModule({currentTarget:document.querySelector('.main-nav button')},'module-simulator');
+
+      // 自适应重绘
+      let resizeTimer=null; window.addEventListener('resize',()=>{if(!isReportVisible())return;clearTimeout(resizeTimer);resizeTimer=setTimeout(scheduleUpdateCharts,150);});
+
+      // 尝试用现有 token 拉数据
+      if(getToken()){ cloudLoadAll().then(()=>{updateAll();}).catch(()=>{}); }
+    });
+  </script>
 </body>
 </html>
+
 
