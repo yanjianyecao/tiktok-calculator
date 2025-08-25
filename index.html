@@ -41,7 +41,7 @@
     .delete-btn{background:var(--delete-color);}
 
     .tab-nav{display:flex;border-bottom:2px solid var(--border-color);}
-    .tab-nav button{background:none;border:none;padding:10px 15px;cursor:pointer;font-size:.95rem;border-bottom:3px solid transparent;}
+    .tab-nav button{background:none;border:none;padding:10px 15px;cursor:pointer;font-size:.95rem;border-bottom:3px solid透明; border-bottom:3px solid transparent;}
     .tab-nav button.active{color:var(--primary-color);font-weight:600;border-bottom-color:var(--primary-color);}
     .tab-content{display:none;padding-top:10px;}
     .tab-content.active{display:block;}
@@ -107,14 +107,8 @@
       </div>
     </nav>
 
-    <!-- ============ 单品模块（原内容保持不变） ============ -->
-    <!-- （为节省篇幅：下方模块内容和之前 v11.1 的模拟器/批量/表格基本一致，只有报告控件和登录相关脚本是新增/修改） -->
-
+    <!-- ============ 单品模块 ============ -->
     <div id="module-simulator" class="module-content active">
-      <!-- …… 保持你当前 v11.1 的单品表格与店铺清单（完全一致） …… -->
-      <!-- 由于内容较长，这里省略；你可以直接用你当前的 v11.1 结构替换本注释处。 -->
-      <!-- ！！！为了让代码可运行，我在下方直接插入上一版的完整模拟器区域（与 v11.1 相同） -->
-      <!-- >>>>>>> 开始：v11.1 的模拟器区域（原样拷贝） >>>>>>> -->
       <div class="main-grid">
         <div class="input-section">
           <fieldset>
@@ -233,10 +227,9 @@
           </div>
         </div>
       </div>
-      <!-- <<<<<<< 结束：v11.1 的模拟器区域（原样拷贝） <<<<<<< -->
     </div>
 
-    <!-- ============ 批量模块（保持一致） ============ -->
+    <!-- ============ 批量模块 ============ -->
     <div id="module-batch" class="module-content">
       <h2>批量利润分析 (CSV)</h2>
       <div class="batch-processing">
@@ -248,7 +241,7 @@
       </div>
     </div>
 
-    <!-- ============ 报告模块（新增 饼图模式 开关） ============ -->
+    <!-- ============ 报告模块（饼图模式开关） ============ -->
     <div id="module-report" class="module-content">
       <h2>可视化报告</h2>
       <div class="report-controls" style="margin-bottom:10px;">
@@ -314,17 +307,14 @@
 
   <script>
     /***********************
-     * 简单前端配置
+     * 简单前端配置（已按你的域名设置）
      ***********************/
-    // 针对你的 GitHub Pages 路径 https://yanjianyecao.github.io/tiktok-calculator/
-const WORKER_API = 'https://<你的-worker子域>.workers.dev/api';  // ← 改成你的 Cloudflare Worker 地址
-const APP_CONFIG = {
-  // 在 GitHub Pages 上用 Worker 域名，在同域（Cloudflare Pages/Functions）则走 /api
-  API_BASE: (location.hostname === 'yanjianyecao.github.io' ? WORKER_API : '/api'),
-  TOKEN_KEY: 'auth_token',
-  USER_KEY: 'auth_user',
-};
-
+    const WORKER_OR_PAGES_API = 'https://tiktok-calculator.pages.dev/api';
+    const APP_CONFIG = {
+      API_BASE: (location.hostname === 'yanjianyecao.github.io' ? WORKER_OR_PAGES_API : '/api'),
+      TOKEN_KEY: 'auth_token',
+      USER_KEY: 'auth_user',
+    };
 
     /***********************
      * 全局状态/工具
@@ -341,7 +331,7 @@ const APP_CONFIG = {
     function updateProfitCell(id,val){const el=document.getElementById(id);if(!el)return;el.textContent=val.toFixed(2);el.className='profit-value '+(val>=0?'positive':'negative');}
 
     /***********************
-     * 模拟器/计算（与 v11.1 一致）
+     * 模拟器/计算
      ***********************/
     function openModule(evt,moduleName){document.querySelectorAll('.module-content').forEach(mc=>mc.style.display="none");const target=document.getElementById(moduleName);if(target)target.style.display="block";document.querySelectorAll('.main-nav button').forEach(b=>b.classList.remove('active'));evt.currentTarget.classList.add('active');if(moduleName==='module-report'){requestAnimationFrame(scheduleUpdateCharts);setTimeout(scheduleUpdateCharts,50);}}
     function openTab(evt,tabName){document.querySelectorAll('#module-simulator .tab-content').forEach(tc=>tc.style.display="none");document.getElementById(tabName).style.display="block";document.querySelectorAll('.tab-nav button').forEach(b=>b.classList.remove('active'));evt.currentTarget.classList.add('active');}
@@ -444,7 +434,7 @@ const APP_CONFIG = {
     }
 
     /***********************
-     * 店铺聚合（与 v11.1 一致）
+     * 店铺聚合
      ***********************/
     const STORE_STORAGE_KEY='tiktokStoreProducts_v1';
     const PRESET_STORAGE_KEY='tiktokProfitPresets_v10';
@@ -491,17 +481,15 @@ const APP_CONFIG = {
     }
 
     /***********************
-     * 报表图表（新增饼图模式开关）
+     * 报表图表（饼图模式开关）
      ***********************/
     function enforcePieModeAvailability(){
       const scope=document.querySelector('input[name="report-scope"]:checked').value;
       const select=document.getElementById('pie-mode-select');
-      // 单品只允许“单品成本构成”
       if(scope==='product'){
         select.value='productCost';
         [...select.options].forEach(opt=>opt.disabled=(opt.value!=='productCost'));
       }else{
-        // 店铺允许两种占比；也允许你看“单品成本构成”，但意义不大，这里默认禁用以避免误解
         [...select.options].forEach(opt=>opt.disabled=(opt.value==='productCost'));
         if(select.value==='productCost') select.value='storeProducts';
       }
@@ -533,7 +521,7 @@ const APP_CONFIG = {
               options:commonOpts
             });
 
-            // 饼图：根据饼图模式（单品只能看成本构成）
+            // 饼图：单品成本构成
             const pieCtx=document.getElementById('cost-pie-chart').getContext('2d');
             if(costPieChart) costPieChart.destroy();
             const sc=res.scenarios[3];
@@ -556,7 +544,7 @@ const APP_CONFIG = {
               options:commonOpts
             });
 
-            // 饼图：店铺模式有两种
+            // 饼图：店铺模式
             const pieCtx=document.getElementById('cost-pie-chart').getContext('2d');
             if(costPieChart) costPieChart.destroy();
 
@@ -584,7 +572,7 @@ const APP_CONFIG = {
     }
 
     /***********************
-     * 目标定价 / 预设 / CSV / PDF（与 v11.1 一致，省略注释）
+     * 目标定价 / 预设 / CSV / PDF
      ***********************/
     function calculateGoalSeek(){
       const inputs=getAllInputValues();
@@ -601,6 +589,7 @@ const APP_CONFIG = {
       updateElement('goal-seek-result',`建议零售价: <strong>${price.toFixed(2)} MXN</strong> (广告达人单)`,true);
     }
 
+    const PRESET_STORAGE_KEY='tiktokProfitPresets_v10';
     function savePreset(){
       const name=document.getElementById('preset-name').value.trim();
       if(!name){alert('请输入预设名称！');return;}
@@ -618,7 +607,7 @@ const APP_CONFIG = {
     function exportPDF(){const content=document.getElementById('report-content');const btn=document.getElementById('export-pdf-btn');btn.textContent='正在生成...';html2canvas(content,{scale:2,useCORS:true}).then(c=>{const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'landscape',unit:'px',format:[c.width,c.height]});pdf.addImage(c.toDataURL('image/png'),'PNG',0,0,c.width,c.height);pdf.save('profit_report.pdf');btn.textContent='导出为 PDF';}).catch(err=>{console.error('PDF导出失败:',err);alert('导出PDF失败，详情见控制台。');btn.textContent='导出为 PDF';});}
 
     /***********************
-     * 登录 & 云端同步（Cloudflare Worker）
+     * 登录 & 云端同步（Cloudflare Pages Functions / KV）
      ***********************/
     function showLogin(){document.getElementById('login-modal').style.display='flex';}
     function hideLogin(){document.getElementById('login-modal').style.display='none';}
@@ -726,5 +715,3 @@ const APP_CONFIG = {
   </script>
 </body>
 </html>
-
-
